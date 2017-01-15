@@ -17,12 +17,13 @@ defmodule Floki.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :mochiweb]]
+    [applications: [:logger, :rustler, :ex_html5ever]]
   end
 
   defp deps do
     [
-      {:mochiweb, "~> 2.15"},
+      {:ex_html5ever, github: "hansihe/ex_html5ever"},
+      {:rustler, github: "hansihe/Rustler", sparse: "rustler_mix", ref: "5fd5e23292a576809049a4a47b2bc0238da9a3ea", override: true},
       {:earmark, "~> 1.0", only: :dev},
       {:ex_doc, "~> 0.14", only: :dev},
       {:credo,">= 0.0.0", only: [:dev, :test]},

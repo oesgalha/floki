@@ -59,10 +59,15 @@ defmodule Floki do
   ## Examples
 
       iex> Floki.parse("<div class=js-action>hello world</div>")
-      {"div", [{"class", "js-action"}], ["hello world"]}
+      [{"html", [], [
+        {"head", [], []},
+        {"body", [], [
+        {"div", [{"class", "js-action"}], ["hello world"]}]}]}]
 
       iex> Floki.parse("<div>first</div><div>second</div>")
-      [{"div", [], ["first"]}, {"div", [], ["second"]}]
+      [{"html", [], [
+        {"head", [], []},
+        {"body", [], [{"div", [], ["first"]}, {"div", [], ["second"]}]}]}]
 
   """
 
@@ -82,7 +87,7 @@ defmodule Floki do
   ## Examples
 
       iex> Floki.parse(~s(<div class="wrapper">my content</div>)) |> Floki.raw_html
-      ~s(<div class="wrapper">my content</div>)
+      ~s(<html><head></head><body><div class="wrapper">my content</div></body></html>)
 
   """
 
@@ -175,7 +180,7 @@ defmodule Floki do
       iex> Floki.text("<div><span>hello</span> world</div>")
       "hello world"
 
-      iex> Floki.text("<div><span>hello</span> world</div>", deep: false)
+      iex> Floki.text(Floki.find("<div><span>hello</span> world</div>", "div"), deep: false)
       " world"
 
       iex> Floki.text("<div><script>hello</script> world</div>")
@@ -247,9 +252,6 @@ defmodule Floki do
 
   ## Examples
 
-      iex> Floki.attribute("<a href=https://google.com>Google</a>", "href")
-      ["https://google.com"]
-
       iex> Floki.attribute([{"a", [{"href", "https://google.com"}], ["Google"]}], "href")
       ["https://google.com"]
 
@@ -257,6 +259,7 @@ defmodule Floki do
 
   @spec attribute(binary | html_tree, binary) :: list
 
+  # TODO: deprecated this
   def attribute(html_tree, attribute_name) when is_binary(html_tree) do
     html_tree
     |> parse
@@ -294,13 +297,17 @@ defmodule Floki do
   ## Examples
 
       iex> Floki.filter_out("<div><script>hello</script> world</div>", "script")
-      {"div", [], [" world"]}
+      [{"html", [], [
+        {"head", [], []},
+        {"body", [], [{"div", [], [" world"]}]}]}]
 
       iex> Floki.filter_out([{"body", [], [{"script", [], []},{"div", [], []}]}], "script")
       [{"body", [], [{"div", [], []}]}]
 
       iex> Floki.filter_out("<div><!-- comment --> text</div>", :comment)
-      {"div", [], [" text"]}
+      [{"html", [], [
+        {"head", [], []},
+        {"body", [], [{"div", [], [" text"]}]}]}]
 
   """
 

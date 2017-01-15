@@ -35,14 +35,15 @@ defmodule FlokiTest do
 
   @html_with_img """
   <html>
+  <head></head>
   <body>
   <a href="http://twitter.com">
-    <img src="http://twitter.com/logo.png" class="js-twitter-logo" />
+    <img src="http://twitter.com/logo.png" class="js-twitter-logo"/>
   </a>
   <!-- this is a comment -->
   <div class="logo-container">
     <img src="http://twitter.com/logo.png" class="img-without-closing-tag">
-    <img src="logo.png" id="logo" />
+    <img src="logo.png" id="logo"/>
   </div>
   </body>
   </html>
@@ -68,90 +69,90 @@ defmodule FlokiTest do
   </rss>
   """
 
-  test "parse simple HTML" do
-    parsed = Floki.parse(@html)
-
-    assert parsed == {
-      "html", [],
-      [{"head", [], [{"title", [], ["Test"]}]},
-        {"body", [],
-          [{"div", [{"class", "content"}],
-            [
-              {
-                "a",
-                [
-                  {"href", "http://google.com"},
-                  {"class", "js-google js-cool"}
-                ],
-                ["Google"]
-              },
-              {
-                "a",
-                [
-                  {"href", "http://elixir-lang.org"},
-                  {"class", "js-elixir js-cool"}
-                ],
-                ["Elixir lang"]
-              },
-              {
-                "a",
-                [
-                  {"href", "http://java.com"},
-                  {"class", "js-java"}
-                ],
-                ["Java"]
-              }
-            ]
-          }]
-        }
-       ]
-      }
-  end
-
   @basic_html """
+  <html>
+  <head>
+    <title>Basic HTML</title>
+  </head>
+  <body>
     <div id="content">
       <p>
-        <a href="uol.com.br" class="bar">
-          <span>UOL</span>
-          <img src="foo.png"/>
-        </a>
+        <a href="https://letsencrypt.org" class="link"><img src="secret.png"/></a>
       </p>
       <strong>ok</strong>
       <br/>
     </div>
+  </body>
+  </html>
   """
+
+  test "parse simple HTML" do
+    assert Floki.parse(@html) == [
+      {"html", [],
+        [
+          {"head", [], ["\n", {"title", [], ["Test"]}, "\n"]}, "\n",
+          {"body", [],
+            ["\n  ",
+             {"div", [{"class", "content"}],
+               ["\n    ",
+                {"a", [{"href", "http://google.com"}, {"class", "js-google js-cool"}],
+                  ["Google"]}, "\n    ",
+                {"a", [{"href", "http://elixir-lang.org"}, {"class", "js-elixir js-cool"}],
+                  ["Elixir lang"]}, "\n    ",
+                {"a", [{"href", "http://java.com"}, {"class", "js-java"}],
+                  ["Java"]}, "\n  "]}, "\n\n\n"]}]}]
+  end
 
   # Floki.parse/1
 
   test "parse html_without_html_tag" do
     parsed = Floki.parse(@html_without_html_tag)
+
     assert parsed == [
-      {"h2", [{"class", "js-cool"}], ["One"]},
-      {"p", [], ["Two"]},
-      {"p", [], ["Three"]}
-    ]
+      {"html", [], [
+        {"head", [], []},
+        {"body", [], [
+          {"h2", [{"class", "js-cool"}], ["One"]},
+          "\n",
+          {"p", [], ["Two"]},
+          "\n",
+          {"p", [], ["Three"]},
+          "\n"]}]}]
   end
 
   # Floki.raw_html/2
 
+  defp remove_new_lines(string) do
+    string
+    |> String.split("\n")
+    |> Enum.map(&(String.strip(&1)))
+    |> Enum.join("")
+  end
+
   test "raw_html" do
-    raw_html = Floki.parse(@basic_html) |> Floki.raw_html
-    assert raw_html == String.split(@basic_html, "\n") |> Enum.map(&(String.strip(&1))) |> Enum.join("")
+    raw_html = @basic_html
+               |> Floki.parse
+               |> Floki.raw_html
+
+    assert remove_new_lines(raw_html) == remove_new_lines(@basic_html)
   end
 
   test "raw_html (html with data attributes)" do
     raw_html = Floki.parse(@html_with_data_attributes) |> Floki.raw_html
-    assert raw_html == String.split(raw_html, "\n") |> Enum.map(&(String.strip(&1))) |> Enum.join("")
+
+    assert remove_new_lines(raw_html) == remove_new_lines(@html_with_data_attributes)
   end
 
   test "raw_html (with comment)" do
     raw_html = Floki.parse(@html_with_img) |> Floki.raw_html
-    assert raw_html == String.split(raw_html, "\n") |> Enum.map(&(String.strip(&1))) |> Enum.join("")
+    expected_html = String.replace(@html_with_img, "tag\">", "tag\"/>")
+
+    assert remove_new_lines(raw_html) == remove_new_lines(expected_html)
   end
 
   test "raw_html (after find)" do
     raw_html = Floki.parse(@basic_html) |> Floki.find("a") |> Floki.raw_html
-    assert raw_html == ~s(<a href="uol.com.br" class="bar"><span>UOL</span><img src="foo.png"/></a>)
+    assert raw_html == ~s(<a href="https://letsencrypt.org" class="link"><img src="secret.png"/></a>)
   end
 
   test "raw_html (with boolean attribute)" do
@@ -228,12 +229,11 @@ defmodule FlokiTest do
     tag_name = "a"
     elements = Floki.find(@html_with_img, tag_name)
 
-    assert elements == [{
-        "a",
-        [{"href", "http://twitter.com"}],
-        [{"img", [{"src", "http://twitter.com/logo.png"},
-                  {"class", "js-twitter-logo"}], []}]
-      }]
+    assert elements == [
+      {"a", [{"href", "http://twitter.com"}],
+        ["\n  ",
+        {"img", [{"src", "http://twitter.com/logo.png"}, {"class", "js-twitter-logo"}], []},
+        "\n"]}]
   end
 
   # Floki.find/2 - ID
@@ -416,24 +416,13 @@ defmodule FlokiTest do
 
   test "find sibling element" do
     expected = [
-      {
-        "div", [{"class", "logo-container"}], [
-          {
-            "img", [
-              {"src", "http://twitter.com/logo.png"},
-              {"class", "img-without-closing-tag"}],
-            []
-          },
-          {
-            "img", [
-              {"src", "logo.png"},
-              {"id", "logo"}
-            ],
-            []
-          }
-        ]
-      }
-    ]
+      {"div", [{"class", "logo-container"}],
+        [
+          "\n  ",
+          {"img", [{"src", "http://twitter.com/logo.png"}, {"class", "img-without-closing-tag"}], []},
+          "\n  ",
+          {"img", [{"src", "logo.png"}, {"id", "logo"}], []},
+          "\n"]}]
 
     assert Floki.find(@html_with_img, "a + div") == expected
     assert Floki.find(@html_with_img, "a + .logo-container") == expected
@@ -594,7 +583,7 @@ defmodule FlokiTest do
   test "parses the HTML before search for attributes" do
     url = "https://google.com"
 
-    assert Floki.attribute("<a href=#{url}>Google</a>", "href") == [url]
+    assert Floki.attribute("<a href=\"#{url}\">Google</a>", "a", "href") == [url]
   end
 
   test "transforms nodes" do
