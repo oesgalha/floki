@@ -17,12 +17,12 @@ defmodule Floki.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :rustler, :ex_html5ever, :mochiweb]]
+    [applications: [:logger, :rustler, :html5ever, :mochiweb]]
   end
 
   defp deps do
     [
-      {:ex_html5ever, github: "hansihe/ex_html5ever"},
+      {:html5ever, github: "hansihe/html5ever_elixir"},
       {:mochiweb, "~> 2.15"},
       {:benchee, "~> 0.6", only: :dev},
       {:earmark, "~> 1.0", only: :dev},
