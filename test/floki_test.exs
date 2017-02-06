@@ -634,4 +634,13 @@ defmodule FlokiTest do
       """
     assert Floki.find(html, "div p") == [{"p", [], ["1"]},{"p", [], ["2"]},{"p", [], ["3"]}]
   end
+
+  test "find nodes with dirty class names" do
+    html = """
+      <html><body>
+        <span class="dirty\n       ">not all html is clean</span>
+      </body></html>
+      """
+    assert Floki.find(html, "span.dirty") == [{"span", [{"class", "dirty\n       "}], ["not all html is clean"]}]
+  end
 end

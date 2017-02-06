@@ -20,7 +20,7 @@ defmodule Floki.AttributeSelector do
 
     whitespace_values = String.split(value, " ")
 
-    Enum.any?(whitespace_values, fn(v) -> v == s.value end)
+    Enum.any?(whitespace_values, fn(v) -> String.replace(v, ~r/\n|\r/, "") == s.value end)
   end
   def match?(attributes, s = %AttributeSelector{match_type: :dash_match}) do
     value = get_value(s.attribute, attributes)
